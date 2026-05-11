@@ -1,0 +1,26 @@
+product_id,name,category,brand,price,description,avg_rating,num_reviews
+0,iPhone 15 Pro,Electronics,Apple,999,smartphone ios camera premium flagship,4.8,910
+1,Samsung Galaxy S24,Electronics,Samsung,849,smartphone android camera flagship,4.6,3822
+2,Sony WH-1000XM5,Electronics,Sony,349,headphones noise-cancelling audio wireless,4.7,3142
+3,MacBook Air M3,Electronics,Apple,1299,laptop macos productivity premium apple,4.9,516
+4,Nike Air Max 270,Sports,Nike,150,shoes running sport athletic,4.4,4476
+5,Nike Running Kit,Sports,Nike,89,sport fitness running accessories kit,4.3,3494
+6,IKEA MALM Desk,Home,IKEA,199,furniture home workspace desk office,4.2,3221
+7,Kindle Paperwhite,Books,Amazon,139,ereader books reading digital,4.6,2969
+8,iPad Air,Electronics,Apple,749,tablet ios productivity drawing apple,4.7,180
+9,Adidas Ultraboost,Sports,Adidas,180,shoes running boost sport premium,4.5,1735
+10,IKEA KALLAX Shelf,Home,IKEA,129,furniture storage home living shelf,4.3,819
+11,Levi's 501 Jeans,Fashion,Levi's,79,jeans fashion classic denim casual,4.4,2441
+12,Sony PlayStation 5,Electronics,Sony,499,gaming console entertainment ps5 sony,4.8,2483
+13,Dyson V15,Home,Dyson,699,vacuum home cleaning premium dyson,4.7,1234
+14,Samsung 4K TV 55,Electronics,Samsung,799,tv 4k entertainment smart samsung,4.5,4605
+15,Apple Watch Series 9,Electronics,Apple,399,smartwatch fitness health apple wearable,4.6,3435
+16,Yoga Mat Pro,Sports,Gaiam,45,yoga fitness mat sport exercise,4.2,4167
+17,Coffee Table Oak,Home,IKEA,249,furniture home living coffee table,4.1,4893
+18,Python Programming,Books,OReilly,49,programming books python coding tech,4.5,2954
+19,Zara Jacket,Fashion,Zara,129,jacket fashion outerwear zara style,4.0,524
+20,AirPods Pro 2,Electronics,Apple,249,earbuds apple audio wireless premium,4.7,1132
+21,Dumbbells Set,Sports,Bowflex,299,weights fitness sport strength training,4.3,2608
+22,Scented Candles Set,Home,Yankee,35,home decor candles fragrance living,4.2,2097
+23,The Great Gatsby,Books,Penguin,15,novel classic fiction books reading,4.4,2797
+24,H&M Summer Dress,Fashion,H&M,59,dress fashion summer casual hm,4.0,1025
