@@ -20,12 +20,13 @@ from sklearn.neighbors import NearestNeighbors
 from scipy.sparse.linalg import svds
 from scipy.stats import pearsonr
 import warnings
+
 warnings.filterwarnings("ignore")
 
 
 class CFEngine:
     def __init__(self, ratings_path: str, products_path: str):
-        self.ratings_df  = pd.read_csv(ratings_path)
+        self.ratings_df = pd.read_csv(ratings_path)
         self.products_df = pd.read_csv(products_path)
 
         # Build User-Item matrix (rows=users, cols=products)
@@ -37,16 +38,20 @@ class CFEngine:
         # Pre-compute similarity matrices
         self._user_sim_matrix = None
         self._item_sim_matrix = None
-        self._svd_predictions  = None
+        self._svd_predictions = None
 
-        print(f"[CF] Matrix shape: {self.matrix.shape} "
-              f"| Sparsity: {self.matrix.isna().mean().mean():.1%}")
+        print(
+            f"[CF] Matrix shape: {self.matrix.shape} "
+            f"| Sparsity: {self.matrix.isna().mean().mean():.1%}"
+        )
 
     # ── helpers ──────────────────────────────────────────────────────────────
 
     def _not_rated(self, user_id: int) -> list[int]:
         """Return product IDs the user has NOT rated yet."""
-        rated = self.ratings_df[self.ratings_df.user_id == user_id]["product_id"].tolist()
+        rated = self.ratings_df[self.ratings_df.user_id == user_id][
+            "product_id"
+        ].tolist()
         all_ids = self.products_df["product_id"].tolist()
         return [p for p in all_ids if p not in rated]
 
@@ -61,7 +66,9 @@ class CFEngine:
             self._user_sim_matrix = cosine_similarity(self.matrix_filled)
         return self._user_sim_matrix
 
-    def recommend_user_user(self, user_id: int, top_n: int = 5, k_neighbors: int = 5) -> list[dict]:
+    def recommend_user_user(
+        self, user_id: int, top_n: int = 5, k_neighbors: int = 5, **kwargs
+    ) -> list[dict]:
         sim = self._user_user_sim()
         users = list(self.matrix.index)
         if user_id not in users:
@@ -71,7 +78,9 @@ class CFEngine:
         sim_scores = list(enumerate(sim[u_idx]))
         sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
         # Exclude the user itself
-        neighbors = [(users[i], s) for i, s in sim_scores if users[i] != user_id][:k_neighbors]
+        neighbors = [(users[i], s) for i, s in sim_scores if users[i] != user_id][
+            :k_neighbors
+        ]
 
         not_rated = self._not_rated(user_id)
         scores = {}
@@ -84,22 +93,28 @@ class CFEngine:
                     scores[pid] = scores.get(pid, 0) + sim_score * row["rating"]
 
         results = []
-        for pid, score in sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_n]:
+        for pid, score in sorted(scores.items(), key=lambda x: x[1], reverse=True)[
+            :top_n
+        ]:
             info = self._product_info(pid)
             neighbor_names = [f"User_{n}" for n, _ in neighbors[:3]]
-            results.append({
-                "product_id":   pid,
-                "name":         info["name"],
-                "category":     info["category"],
-                "brand":        info["brand"],
-                "price":        info["price"],
-                "avg_rating":   info["avg_rating"],
-                "score":        round(score, 3),
-                "method":       "User-User CF",
-                "explanation":  (f"Recommended because {k_neighbors} similar users "
-                                 f"(e.g. {', '.join(neighbor_names)}) "
-                                 f"rated this highly.")
-            })
+            results.append(
+                {
+                    "product_id": pid,
+                    "name": info["name"],
+                    "category": info["category"],
+                    "brand": info["brand"],
+                    "price": info["price"],
+                    "avg_rating": info["avg_rating"],
+                    "score": round(score, 3),
+                    "method": "User-User CF",
+                    "explanation": (
+                        f"Recommended because {k_neighbors} similar users "
+                        f"(e.g. {', '.join(neighbor_names)}) "
+                        f"rated this highly."
+                    ),
+                }
+            )
         return results
 
     # ── Method 2: Item-Item CF ───────────────────────────────────────────────
@@ -113,7 +128,7 @@ class CFEngine:
             )
         return self._item_sim_matrix
 
-    def recommend_item_item(self, user_id: int, top_n: int = 5) -> list[dict]:
+    def recommend_item_item(self, user_id: int, top_n: int = 5, **kwargs) -> list[dict]:
         sim_df = self._item_item_sim()
         user_ratings = self.ratings_df[self.ratings_df.user_id == user_id]
         if user_ratings.empty:
@@ -129,26 +144,34 @@ class CFEngine:
             item_sims = sim_df[rated_pid].drop(index=rated_pid, errors="ignore")
             for cand_pid, sim_score in item_sims.items():
                 if cand_pid in not_rated:
-                    scores[cand_pid] = scores.get(cand_pid, 0) + sim_score * row["rating"]
+                    scores[cand_pid] = (
+                        scores.get(cand_pid, 0) + sim_score * row["rating"]
+                    )
 
         results = []
-        for pid, score in sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_n]:
+        for pid, score in sorted(scores.items(), key=lambda x: x[1], reverse=True)[
+            :top_n
+        ]:
             info = self._product_info(pid)
             # Find most similar rated item for explanation
             best_match = user_ratings.iloc[0]["product_id"]
-            best_name  = self._product_info(int(best_match))["name"]
-            results.append({
-                "product_id":  pid,
-                "name":        info["name"],
-                "category":    info["category"],
-                "brand":       info["brand"],
-                "price":       info["price"],
-                "avg_rating":  info["avg_rating"],
-                "score":       round(score, 3),
-                "method":      "Item-Item CF",
-                "explanation": (f"Recommended because it is similar to "
-                                f'"{best_name}" which you rated highly.')
-            })
+            best_name = self._product_info(int(best_match))["name"]
+            results.append(
+                {
+                    "product_id": pid,
+                    "name": info["name"],
+                    "category": info["category"],
+                    "brand": info["brand"],
+                    "price": info["price"],
+                    "avg_rating": info["avg_rating"],
+                    "score": round(score, 3),
+                    "method": "Item-Item CF",
+                    "explanation": (
+                        f"Recommended because it is similar to "
+                        f'"{best_name}" which you rated highly.'
+                    ),
+                }
+            )
         return results
 
     # ── Method 3: SVD ────────────────────────────────────────────────────────
@@ -168,40 +191,50 @@ class CFEngine:
             self._svd_predictions = pd.DataFrame(
                 np.dot(np.dot(U, sigma_diag), Vt) + user_means,
                 index=self.matrix.index,
-                columns=self.matrix.columns
+                columns=self.matrix.columns,
             )
         return self._svd_predictions
 
-    def recommend_svd(self, user_id: int, top_n: int = 5, n_factors: int = 10) -> list[dict]:
+    def recommend_svd(
+        self, user_id: int, top_n: int = 5, n_factors: int = 10, **kwargs
+    ) -> list[dict]:
         preds = self._build_svd(n_factors)
         if user_id not in preds.index:
             return []
 
-        not_rated   = self._not_rated(user_id)
-        user_preds  = preds.loc[user_id]
-        cand_preds  = user_preds[user_preds.index.isin(not_rated)].sort_values(ascending=False)
+        not_rated = self._not_rated(user_id)
+        user_preds = preds.loc[user_id]
+        cand_preds = user_preds[user_preds.index.isin(not_rated)].sort_values(
+            ascending=False
+        )
 
         results = []
         for pid, pred_rating in cand_preds.head(top_n).items():
             info = self._product_info(pid)
-            results.append({
-                "product_id":  pid,
-                "name":        info["name"],
-                "category":    info["category"],
-                "brand":       info["brand"],
-                "price":       info["price"],
-                "avg_rating":  info["avg_rating"],
-                "score":       round(float(pred_rating), 3),
-                "method":      "SVD (Matrix Factorization)",
-                "explanation": (f"SVD predicted rating: {min(5.0, max(1.0, pred_rating)):.1f}/5. "
-                                f"Latent factor analysis ({n_factors} factors) detected hidden "
-                                f"preference patterns in the rating matrix.")
-            })
+            results.append(
+                {
+                    "product_id": pid,
+                    "name": info["name"],
+                    "category": info["category"],
+                    "brand": info["brand"],
+                    "price": info["price"],
+                    "avg_rating": info["avg_rating"],
+                    "score": round(float(pred_rating), 3),
+                    "method": "SVD (Matrix Factorization)",
+                    "explanation": (
+                        f"SVD predicted rating: {min(5.0, max(1.0, pred_rating)):.1f}/5. "
+                        f"Latent factor analysis ({n_factors} factors) detected hidden "
+                        f"preference patterns in the rating matrix."
+                    ),
+                }
+            )
         return results
 
     # ── Method 4: KNN ────────────────────────────────────────────────────────
 
-    def recommend_knn(self, user_id: int, top_n: int = 5, k: int = 5) -> list[dict]:
+    def recommend_knn(
+        self, user_id: int, top_n: int = 5, k: int = 5, **kwargs
+    ) -> list[dict]:
         users = list(self.matrix.index)
         if user_id not in users:
             return []
@@ -218,7 +251,7 @@ class CFEngine:
         scores = {}
         for n_idx in neighbor_idxs:
             n_uid = users[n_idx]
-            sim   = 1 - distances[0][list(indices[0]).index(n_idx)]
+            sim = 1 - distances[0][list(indices[0]).index(n_idx)]
             n_ratings = self.ratings_df[self.ratings_df.user_id == n_uid]
             for _, row in n_ratings.iterrows():
                 pid = int(row["product_id"])
@@ -226,33 +259,41 @@ class CFEngine:
                     scores[pid] = scores.get(pid, 0) + sim * row["rating"]
 
         results = []
-        for pid, score in sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_n]:
+        for pid, score in sorted(scores.items(), key=lambda x: x[1], reverse=True)[
+            :top_n
+        ]:
             info = self._product_info(pid)
-            results.append({
-                "product_id":  pid,
-                "name":        info["name"],
-                "category":    info["category"],
-                "brand":       info["brand"],
-                "price":       info["price"],
-                "avg_rating":  info["avg_rating"],
-                "score":       round(score, 3),
-                "method":      "KNN CF",
-                "explanation": (f"KNN found {k} nearest neighbors (cosine distance). "
-                                f"These users share similar rating patterns with you.")
-            })
+            results.append(
+                {
+                    "product_id": pid,
+                    "name": info["name"],
+                    "category": info["category"],
+                    "brand": info["brand"],
+                    "price": info["price"],
+                    "avg_rating": info["avg_rating"],
+                    "score": round(score, 3),
+                    "method": "KNN CF",
+                    "explanation": (
+                        f"KNN found {k} nearest neighbors (cosine distance). "
+                        f"These users share similar rating patterns with you."
+                    ),
+                }
+            )
         return results
 
     # ── Unified entry point ──────────────────────────────────────────────────
 
-    def recommend(self, user_id: int, method: str = "svd", top_n: int = 5, **kwargs) -> list[dict]:
+    def recommend(
+        self, user_id: int, method: str = "svd", top_n: int = 5, **kwargs
+    ) -> list[dict]:
         """
         method: "user_user" | "item_item" | "svd" | "knn"
         """
         dispatch = {
             "user_user": self.recommend_user_user,
             "item_item": self.recommend_item_item,
-            "svd":       self.recommend_svd,
-            "knn":       self.recommend_knn,
+            "svd": self.recommend_svd,
+            "knn": self.recommend_knn,
         }
         if method not in dispatch:
             raise ValueError(f"Unknown method '{method}'. Choose from {list(dispatch)}")
