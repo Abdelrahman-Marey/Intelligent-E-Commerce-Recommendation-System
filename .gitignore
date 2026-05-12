@@ -6,3 +6,4 @@ data/_train.csv
 data/evaluation_report.csv
 .streamlit/
 *.zip
+.DS_Store
